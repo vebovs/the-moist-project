@@ -9,17 +9,17 @@ const float tx_freq = 433.600; // in Mhz
 const long sbw = 62500; // in kHz
 const uint8_t sf = 8;
 const uint8_t crc = 7; //denominator, final value is 4/7
-const int8_t tx_power = 10; // in dbm
+const uint8_t tx_power = 6; // in dbm
 
 const byte scd30_address = 0x61;
 
-const uint16_t main_loop_delay = 2000; // ms
+const uint16_t main_loop_delay = 2500; // ms
 
 RH_RF95 rf95(CS_PIN, INT_PIN);
 Adafruit_SCD30 scd30;
 GY91 gy91;
 
-char payload[RH_RF95_MAX_MESSAGE_LEN];
+uint8_t payload[RH_RF95_MAX_MESSAGE_LEN];
 
 void setup() {
   Serial.begin(9600);
@@ -46,6 +46,7 @@ void setup() {
 
 void loop() {
   delay(main_loop_delay);
+  Serial.println();
 
   float reading = analogRead(A8);
   reading = (1023 / reading)  - 1;     // (1023/ADC - 1)
@@ -85,21 +86,59 @@ void loop() {
 
   Serial.println("Sending payload to ground station...");
 
-  String sensor_data = "";
-  sensor_data.concat(reading).concat(", ").
-    concat(pressure).concat(", ").
-    concat(temperature).concat(", ").
-    concat(relative_humidity).concat(", ").
-    concat(co2);
+  doubleToBytes(payload, pressure, 0);
+  floatToBytes(payload, reading, 8);
+  floatToBytes(payload, relative_humidity, 12);
+  floatToBytes(payload, co2, 16);
+  floatToBytes(payload, temperature, 20);
+  printBytes(payload, 24);
 
-  char data[sensor_data.length()];
-  sensor_data.toCharArray(data, sensor_data.length()); 
-
-  uint8_t len = sprintf(payload, data) + 1;
-
-  rf95.send((uint8_t *)payload, &len);
+  rf95.send(payload, 24);
   rf95.waitPacketSent();
 
   Serial.println();
 }
 
+void floatToBytes(uint8_t* bf, float val, uint8_t len) {
+    byte data[4] = {
+    ((uint8_t*)&val)[3],
+    ((uint8_t*)&val)[2],
+    ((uint8_t*)&val)[1],
+    ((uint8_t*)&val)[0]
+  };
+
+  for(int i = 0; i < sizeof(data); i++) {
+    bf[i + len] = data[i];
+  }
+}
+
+void doubleToBytes(uint8_t* bf, double val, uint8_t len) {
+    byte data[8] = {
+    ((uint8_t*)&val)[7],
+    ((uint8_t*)&val)[6],
+    ((uint8_t*)&val)[5],
+    ((uint8_t*)&val)[4],
+    ((uint8_t*)&val)[3],
+    ((uint8_t*)&val)[2],
+    ((uint8_t*)&val)[1],
+    ((uint8_t*)&val)[0]
+  };
+
+  for(int i = 0; i < sizeof(data); i++) {
+    bf[i + len] = data[i];
+  }
+}
+
+void printBytes(uint8_t* bytes, uint8_t len) {
+  for(uint8_t i = 0; i < len; i++) {
+    printBitsFromByte(bytes[i]);
+  }
+}
+
+void printBitsFromByte(byte val) {
+    for(int i = 0; i < 8; i++) {
+    bool b = val & 0x80;
+    Serial.print(b);
+    val = val << 1;
+  }
+}
