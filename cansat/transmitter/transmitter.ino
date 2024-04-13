@@ -15,6 +15,7 @@ SoftwareSerial gpsSerial(GPS_RX_PIN, GPS_TX_PIN);
 TinyGPSPlus gps;
 
 const uint16_t main_loop_delay = 2000; // ms
+uint16_t scd30_interval = 0;
 uint8_t payload[RH_RF95_MAX_MESSAGE_LEN];
 
 int gps_thread_id = 0;
@@ -55,6 +56,12 @@ void setup() {
   if(!scd30.begin(SCD30_ADDRESS, &Wire1, 0)) {
     Serial.println("Failed to find the SCD30...");
   }
+
+  scd30_interval = scd30.getMeasurementInterval();
+
+  Serial.print("SCD30 measurement interval: ");
+  Serial.print(scd30.getMeasurementInterval());
+  Serial.println("s");
 
   scd30_thread_id = threads.addThread(scd30Task);
   scd30_thread_state = threads.getState(scd30_thread_id);
@@ -139,6 +146,7 @@ void loop() {
 
 void scd30Task() {
   while(1) {
+    delay(scd30_interval * 1000);
     if(scd30.dataReady()) {
       if(scd30.read()) {
         temperature = float16(scd30.temperature); 
