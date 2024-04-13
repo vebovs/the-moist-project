@@ -5,21 +5,21 @@
 #include <SoftwareSerial.h>
 #include <TinyGPSPlus.h>
 #include <float16.h>
+#include <TeensyThreads.h>
 
 const uint8_t CS_PIN = 24;
 const uint8_t INT_PIN = 25;
+
 const float tx_freq = 433.600; // in Mhz
-const long sbw = 62500; // in kHz
+const long sbw = 62500; // in Hz
 const uint8_t sf = 7;
 const uint8_t crc = 5; //denominator, final value is 4/7
-const uint8_t tx_power = 6; // in dbm
+const uint8_t tx_power = 10; // in dbm
 
 const byte scd30_address = 0x61;
-
 const uint32_t GPSBaud = 9600;
-const uint16_t GPSWaitTime = 2000; // ms
 
-const uint16_t main_loop_delay = 2500; // ms
+const uint16_t main_loop_delay = 2000; // ms
 
 RH_RF95 rf95(CS_PIN, INT_PIN);
 Adafruit_SCD30 scd30;
@@ -28,13 +28,31 @@ SoftwareSerial gpsSerial(0, 1); // RxPin = 0, TxPin = 1 on Teensy
 TinyGPSPlus gps;
 
 uint8_t payload[RH_RF95_MAX_MESSAGE_LEN];
+
+int gps_thread_id = 0;
+int gps_thread_state = 0;
+int scd30_thread_id = 0;
+int scd30_thread_state = 0;
+
 int32_t ID = 0;
+float altitude = 0;
+float lat = 0;
+float lng = 0;
+uint8_t hour = 0;
+uint8_t minute = 0;
+uint8_t second = 0;
+float16 temperature(0.0);
+float16 relative_humidity(0.0);
+float co2 = 0.0;
 
 void setup() {
   Serial.begin(9700);
   while(!Serial) delay(10); // Wait for serial port to be available
 
   gpsSerial.begin(GPSBaud);
+
+  gps_thread_id = threads.addThread(gpsTask);
+  gps_thread_state = threads.getState(gps_thread_id);
 
   if(!rf95.init()) {
     Serial.println("Radio initialisation failed...");
@@ -50,6 +68,9 @@ void setup() {
     Serial.println("Failed to find the SCD30...");
   }
 
+  scd30_thread_id = threads.addThread(scd30Task);
+  scd30_thread_state = threads.getState(scd30_thread_id);
+
   if(!gy91.init()) {
     Serial.println("Could not initiate the GY91...");
   }
@@ -57,7 +78,16 @@ void setup() {
 
 void loop() {
   delay(main_loop_delay);
+
   Serial.println();
+  if(gps_thread_state == threads.RUNNING) Serial.println("GPS thread is running");
+  if(gps_thread_state == threads.ENDED) Serial.println("GPS thread has ended");
+  if(scd30_thread_state == threads.RUNNING) Serial.println("SCD30 thread is running");
+  if(scd30_thread_state == threads.ENDED) Serial.println("SCD30 thread has ended");
+  Serial.println();
+
+  Serial.print("ID: ");
+  Serial.println(ID);
 
   float reading = analogRead(A8);
   reading = (1023 / reading)  - 1;
@@ -67,63 +97,19 @@ void loop() {
 
   double pressure = float(gy91.readPressure());
   Serial.print("Pressure: ");
-  Serial.print(pressure);
+  Serial.println(pressure);
 
-  Serial.println();
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" degrees C");
 
-  float16 temperature(0.0);
-  float16 relative_humidity(0.0);
-  float co2 = 0.0;
+  Serial.print("Relative Humidity: ");
+  Serial.print(relative_humidity);
+  Serial.println(" %");
 
-  if(scd30.dataReady()) {
-    if(scd30.read()) {
-      temperature = float16(scd30.temperature); 
-      Serial.print("Temperature: ");
-      Serial.print(scd30.temperature);
-      Serial.println(" degrees C");
-   
-      relative_humidity = float16(scd30.relative_humidity); 
-      Serial.print("Relative Humidity: ");
-      Serial.print(scd30.relative_humidity);
-      Serial.println(" %");
-   
-      co2 = scd30.CO2;
-      Serial.print("CO2: ");
-      Serial.print(scd30.CO2, 3);
-      Serial.println(" ppm");
-      Serial.println(""); 
-    }
-  }
-
-  float altitude = 0;
-  float lat = 0;
-  float lng = 0;
-
-  uint8_t hour = 0;
-  uint8_t minute = 0;
-  uint8_t second = 0;
-  
-  uint32_t start = millis();
-  uint32_t end = start;
-  while(end - start < GPSWaitTime || (altitude == 0.0 || lat == 0.0 || lng == 0.0 || hour == 0 || minute == 0 || second == 0)) {
-    while(gpsSerial.available() > 0) gps.encode(gpsSerial.read());
-    if(gps.location.isUpdated()) {
-      lat = float(gps.location.lat());
-      lng = float(gps.location.lng());
-    }
-    if(gps.altitude.isUpdated()) {
-      altitude = float(gps.altitude.meters());
-    }
-    if(gps.time.isUpdated()) {
-      hour = gps.time.hour() + 2;
-      minute = gps.time.minute();
-      second = gps.time.second();
-    }
-    end = millis();
-  }
-
-  Serial.print("ID: ");
-  Serial.println(ID);
+  Serial.print("CO2: ");
+  Serial.print(co2, 3);
+  Serial.println(" ppm");
 
   Serial.print("Timestamp: ");
   Serial.print(hour);
@@ -161,6 +147,36 @@ void loop() {
   ID++;
 
   Serial.println();
+}
+
+void scd30Task() {
+  while(1) {
+    if(scd30.dataReady()) {
+      if(scd30.read()) {
+        temperature = float16(scd30.temperature); 
+        relative_humidity = float16(scd30.relative_humidity); 
+        co2 = scd30.CO2;
+      }
+    }
+  }
+}
+
+void gpsTask() {
+  while(1) {
+    while(gpsSerial.available() > 0) gps.encode(gpsSerial.read());
+    if(gps.location.isUpdated()) {
+      lat = float(gps.location.lat());
+      lng = float(gps.location.lng());
+    }
+    if(gps.altitude.isUpdated()) {
+      altitude = float(gps.altitude.meters());
+    }
+    if(gps.time.isUpdated()) {
+      hour = gps.time.hour() + 2; // Norway is GMT + 2
+      minute = gps.time.minute();
+      second = gps.time.second();
+    }
+  }
 }
 
 void idToBytes(uint8_t* bf, uint32_t id, uint8_t len) {

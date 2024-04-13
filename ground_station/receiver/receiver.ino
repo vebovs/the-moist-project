@@ -7,7 +7,7 @@ const uint8_t CS_PIN = 24;
 const uint8_t INT_PIN = 25;
 
 const float rx_freq = 433.600; // in Mhz
-const long sbw = 62500; // in kHz
+const long sbw = 62500; // in Hz
 const uint8_t sf = 7;
 const uint8_t crc = 5; //denominator, final value is 4/7
 
@@ -32,10 +32,10 @@ const uint16_t bits_temp = bits_co2 + 16;
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial); // Wait for serial port to be available
+  while (!Serial) delay(10); // Wait for serial port to be available
 
   if (!rf95.init()) {
-    Serial.println("init failed");
+    Serial.println("Radio initialisation failed...");
   }
 
   rf95.setFrequency(rx_freq);
