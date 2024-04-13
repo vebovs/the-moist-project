@@ -8,6 +8,10 @@
 #include <TeensyThreads.h>
 #include <moist.h>
 
+// Enables the serial port for diagnostics
+// Set to 0 before connecting to battery power
+#define DEBUG 1
+
 RH_RF95 rf95(CS_PIN, INT_PIN);
 Adafruit_SCD30 scd30;
 GY91 gy91;
@@ -35,8 +39,10 @@ float16 relative_humidity(0.0);
 float co2 = 0.0;
 
 void setup() {
-  Serial.begin(9700);
-  while(!Serial) delay(10); // Wait for serial port to be available
+  #if DEBUG
+    Serial.begin(9700);
+    while(!Serial) delay(10); // Wait for serial port to be available
+  #endif
 
   gpsSerial.begin(GPS_BAUD);
 
@@ -44,7 +50,9 @@ void setup() {
   gps_thread_state = threads.getState(gps_thread_id);
 
   if(!rf95.init()) {
-    Serial.println("Radio initialisation failed...");
+    #if DEBUG
+      Serial.println("Radio initialisation failed...");
+    #endif
   }
   
   rf95.setFrequency(FREQUENCY);
@@ -54,75 +62,86 @@ void setup() {
   rf95.setTxPower(OUTPUT_POWER, 0);
 
   if(!scd30.begin(SCD30_ADDRESS, &Wire1, 0)) {
-    Serial.println("Failed to find the SCD30...");
+    #if DEBUG
+      Serial.println("Failed to find the SCD30...");
+    #endif
   }
 
   scd30_interval = scd30.getMeasurementInterval();
 
-  Serial.print("SCD30 measurement interval: ");
-  Serial.print(scd30.getMeasurementInterval());
-  Serial.println("s");
+  #if DEBUG
+    Serial.print("SCD30 measurement interval: ");
+    Serial.print(scd30.getMeasurementInterval());
+    Serial.println("s");
+  #endif
 
   scd30_thread_id = threads.addThread(scd30Task);
   scd30_thread_state = threads.getState(scd30_thread_id);
 
   if(!gy91.init()) {
-    Serial.println("Could not initiate the GY91...");
+    #if DEBUG
+      Serial.println("Could not initiate the GY91...");
+    #endif
   }
 }
 
 void loop() {
   delay(main_loop_delay);
 
-  Serial.println();
-  if(gps_thread_state == threads.RUNNING) Serial.println("GPS thread is running");
-  if(gps_thread_state == threads.ENDED) Serial.println("GPS thread has ended");
-  if(scd30_thread_state == threads.RUNNING) Serial.println("SCD30 thread is running");
-  if(scd30_thread_state == threads.ENDED) Serial.println("SCD30 thread has ended");
-  Serial.println();
-
-  Serial.print("ID: ");
-  Serial.println(ID);
+  #if DEBUG
+    Serial.println();
+    if(gps_thread_state == threads.RUNNING) Serial.println("GPS thread is running");
+    if(gps_thread_state == threads.ENDED) Serial.println("GPS thread has ended");
+    if(scd30_thread_state == threads.RUNNING) Serial.println("SCD30 thread is running");
+    if(scd30_thread_state == threads.ENDED) Serial.println("SCD30 thread has ended");
+    Serial.println();
+    Serial.print("ID: ");
+    Serial.println(ID);
+  #endif
 
   float reading = analogRead(A8);
   reading = (1023 / reading)  - 1;
   reading = 4700 / reading; // R1 = 4.7 kOhms
-  Serial.print("Thermistor resistance: ");
-  Serial.println(reading);
 
   double pressure = float(gy91.readPressure());
-  Serial.print("Pressure: ");
-  Serial.println(pressure);
 
-  Serial.print("Temperature: ");
-  Serial.print(temperature);
-  Serial.println(" degrees C");
+  #if DEBUG
+    Serial.print("Thermistor resistance: ");
+    Serial.println(reading);
 
-  Serial.print("Relative Humidity: ");
-  Serial.print(relative_humidity);
-  Serial.println(" %");
+    Serial.print("Pressure: ");
+    Serial.println(pressure);
 
-  Serial.print("CO2: ");
-  Serial.print(co2, 3);
-  Serial.println(" ppm");
+    Serial.print("Temperature: ");
+    Serial.print(temperature);
+    Serial.println(" degrees C");
 
-  Serial.print("Timestamp: ");
-  Serial.print(hour);
-  Serial.print(":");
-  Serial.print(minute);
-  Serial.print(":");
-  Serial.println(second);
+    Serial.print("Relative Humidity: ");
+    Serial.print(relative_humidity);
+    Serial.println(" %");
 
-  Serial.print("Altitude: ");
-  Serial.println(altitude);
-  Serial.print("Latitude: ");
-  Serial.println(lat);
-  Serial.print("Longitude: ");
-  Serial.println(lng);
+    Serial.print("CO2: ");
+    Serial.print(co2, 3);
+    Serial.println(" ppm");
 
-  Serial.println();
+    Serial.print("Timestamp: ");
+    Serial.print(hour);
+    Serial.print(":");
+    Serial.print(minute);
+    Serial.print(":");
+    Serial.println(second);
 
-  Serial.println("Sending payload to ground station...");
+    Serial.print("Altitude: ");
+    Serial.println(altitude);
+    Serial.print("Latitude: ");
+    Serial.println(lat);
+    Serial.print("Longitude: ");
+    Serial.println(lng);
+
+    Serial.println();
+
+    Serial.println("Sending payload to ground station...");
+  #endif
 
   idToBytes(payload, ID, 0);
   payload[3] = hour, payload[4] = minute, payload[5] = second;
@@ -134,14 +153,19 @@ void loop() {
   float16ToBytes(payload, relative_humidity, 26);
   floatToBytes(payload, co2, 28);
   float16ToBytes(payload, temperature, 32);
-  printBytes(payload, 34);
+  
+  #if DEBUG
+    printBytes(payload, 34);
+  #endif
 
   rf95.send(payload, 34);
   rf95.waitPacketSent();
 
   ID++;
 
-  Serial.println();
+  #if DEBUG
+    Serial.println();
+  #endif
 }
 
 void scd30Task() {
