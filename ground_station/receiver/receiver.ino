@@ -2,20 +2,11 @@
 #include <RH_RF95.h>
 #include <TimeLib.h>
 #include <float16.h>
-
-const uint8_t CS_PIN = 24;
-const uint8_t INT_PIN = 25;
-
-const float rx_freq = 433.600; // in Mhz
-const long sbw = 62500; // in Hz
-const uint8_t sf = 7;
-const uint8_t crc = 5; //denominator, final value is 4/7
+#include <moist.h>
 
 RH_RF95 rf95(CS_PIN, INT_PIN);
 
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-
-const uint8_t data_budget_size = 34; // bytes to be decoded
 
 const uint16_t bits_id = 24;
 const uint16_t bits_hour = bits_id + 8;
@@ -38,10 +29,10 @@ void setup() {
     Serial.println("Radio initialisation failed...");
   }
 
-  rf95.setFrequency(rx_freq);
-  rf95.setSpreadingFactor(sf);
-  rf95.setSignalBandwidth(sbw);
-  rf95.setCodingRate4(crc);
+  rf95.setFrequency(FREQUENCY);
+  rf95.setSpreadingFactor(SPREADING_FACTOR);
+  rf95.setSignalBandwidth(BANDWIDTH);
+  rf95.setCodingRate4(CRC_DENOMINATOR);
 }
 
 void loop() {
@@ -49,8 +40,8 @@ void loop() {
     uint8_t len = sizeof(buf);
     if (rf95.recv(buf, &len)) {
       //Serial.println("Received data: ");
-      char bit_str_buf[data_budget_size * 8];
-      bytesToBitStr(buf, data_budget_size, bit_str_buf);
+      char bit_str_buf[DATA_BUDGET_SIZE * 8];
+      bytesToBitStr(buf, DATA_BUDGET_SIZE, bit_str_buf);
       String bit_str = String(bit_str_buf);
 
       //Elapsed time since start
@@ -95,55 +86,5 @@ void loop() {
   }
   else{
     //Serial.println("Nothing received...");
-  }
-}
-
-uint8_t bitStringToUint8(const char* str) {
-  uint8_t x = 0;
-  for(; *str; ++str) {
-    x = (x << 1) + (*str - '0');
-  }
-  return x;
-}
-
-int32_t bitStringToInt32(const char* str) {
-  int32_t x = 0;
-  for(; *str; ++str) {
-    x = (x << 1) + (*str - '0');
-  }
-  return x;
-}
-
-float16 bitStringToFloat16(const char* str) {
-  uint16_t x = 0;
-  for(; *str; ++str) {
-    x = (x << 1) + (*str - '0');
-  }
-  float16 f;
-  f.setBinary(x);
-  return f;
-}
-
-float bitStringToFloat(const char* str) {
-  uint32_t x = 0;
-  for(; *str; ++str) {
-    x = (x << 1) + (*str - '0');
-  }
-  float f;
-  memcpy(&f, &x, 4); // 4 because float is 32 bits
-  return f;
-}
-
-void bytesToBitStr(uint8_t* bytes, uint8_t len, char* str) {
-  for(uint8_t i = 0; i < len; i++) {
-    byteToBits(bytes[i], str, i);
-  }
-}
-
-void byteToBits(uint8_t val, char* str, uint8_t len) {
-  for(uint8_t i = 0; i < 8; i++) {
-    bool b = val & 0x80;
-    str[len * 8 + i] = b == 1 ? '1' : '0';
-    val = val << 1;
   }
 }

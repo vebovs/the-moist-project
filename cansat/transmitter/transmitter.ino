@@ -6,27 +6,15 @@
 #include <TinyGPSPlus.h>
 #include <float16.h>
 #include <TeensyThreads.h>
-
-const uint8_t CS_PIN = 24;
-const uint8_t INT_PIN = 25;
-
-const float tx_freq = 433.600; // in Mhz
-const long sbw = 62500; // in Hz
-const uint8_t sf = 7;
-const uint8_t crc = 5; //denominator, final value is 4/7
-const uint8_t tx_power = 10; // in dbm
-
-const byte scd30_address = 0x61;
-const uint32_t GPSBaud = 9600;
-
-const uint16_t main_loop_delay = 2000; // ms
+#include <moist.h>
 
 RH_RF95 rf95(CS_PIN, INT_PIN);
 Adafruit_SCD30 scd30;
 GY91 gy91;
-SoftwareSerial gpsSerial(0, 1); // RxPin = 0, TxPin = 1 on Teensy
+SoftwareSerial gpsSerial(GPS_RX_PIN, GPS_TX_PIN);
 TinyGPSPlus gps;
 
+const uint16_t main_loop_delay = 2000; // ms
 uint8_t payload[RH_RF95_MAX_MESSAGE_LEN];
 
 int gps_thread_id = 0;
@@ -49,7 +37,7 @@ void setup() {
   Serial.begin(9700);
   while(!Serial) delay(10); // Wait for serial port to be available
 
-  gpsSerial.begin(GPSBaud);
+  gpsSerial.begin(GPS_BAUD);
 
   gps_thread_id = threads.addThread(gpsTask);
   gps_thread_state = threads.getState(gps_thread_id);
@@ -58,13 +46,13 @@ void setup() {
     Serial.println("Radio initialisation failed...");
   }
   
-  rf95.setFrequency(tx_freq);
-  rf95.setSignalBandwidth(sbw);
-  rf95.setSpreadingFactor(sf);
-  rf95.setCodingRate4(crc);
-  rf95.setTxPower(tx_power, 0);
+  rf95.setFrequency(FREQUENCY);
+  rf95.setSignalBandwidth(BANDWIDTH);
+  rf95.setSpreadingFactor(SPREADING_FACTOR);
+  rf95.setCodingRate4(CRC_DENOMINATOR);
+  rf95.setTxPower(OUTPUT_POWER, 0);
 
-  if(!scd30.begin(scd30_address, &Wire1, 0)) {
+  if(!scd30.begin(SCD30_ADDRESS, &Wire1, 0)) {
     Serial.println("Failed to find the SCD30...");
   }
 
@@ -176,44 +164,5 @@ void gpsTask() {
       minute = gps.time.minute();
       second = gps.time.second();
     }
-  }
-}
-
-void idToBytes(uint8_t* bf, uint32_t id, uint8_t len) {
-  bf[len + 2] = id & 0xff;
-  bf[len + 1] = (id >> 8);
-  bf[len] = (id >> 16);
-}
-
-void float16ToBytes(uint8_t* bf, float16 val, uint8_t len) {
-  uint16_t bytes = val.getBinary();
-  bf[len + 1] = bytes & 0xff;
-  bf[len] = (bytes >> 8);
-}
-
-void floatToBytes(uint8_t* bf, float val, uint8_t len) {
-    byte data[4] = {
-    ((uint8_t*)&val)[3],
-    ((uint8_t*)&val)[2],
-    ((uint8_t*)&val)[1],
-    ((uint8_t*)&val)[0]
-  };
-
-  for(uint8_t i = 0; i < 4; i++) {
-    bf[i + len] = data[i];
-  }
-}
-
-void printBytes(uint8_t* bytes, uint8_t len) {
-  for(uint8_t i = 0; i < len; i++) {
-    printBitsFromByte(bytes[i]);
-  }
-}
-
-void printBitsFromByte(byte val) {
-    for(int i = 0; i < 8; i++) {
-    bool b = val & 0x80;
-    Serial.print(b);
-    val = val << 1;
   }
 }
