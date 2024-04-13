@@ -68,9 +68,9 @@ void loop() {
         Serial.print("Altitude: ");
         Serial.println(bitStringToFloat(bit_str.substring(bits_second, bits_altitude).c_str()));
         Serial.print("Latitude: ");
-        Serial.println(bitStringToFloat(bit_str.substring(bits_altitude, bits_lat).c_str()));
+        Serial.println(bitStringToFloat(bit_str.substring(bits_altitude, bits_lat).c_str()), 6);
         Serial.print("Longitude: ");
-        Serial.println(bitStringToFloat(bit_str.substring(bits_lat, bits_lng).c_str()));
+        Serial.println(bitStringToFloat(bit_str.substring(bits_lat, bits_lng).c_str()), 6);
         Serial.print("Pressure: ");
         Serial.println(bitStringToFloat(bit_str.substring(bits_lng, bits_pressure).c_str()));
         Serial.print("NTC: ");
@@ -104,9 +104,9 @@ void loop() {
         Serial.print(",");
         Serial.print(bitStringToFloat(bit_str.substring(bits_second, bits_altitude).c_str()));
         Serial.print(",");
-        Serial.print(bitStringToFloat(bit_str.substring(bits_altitude, bits_lat).c_str()));
+        Serial.print(bitStringToFloat(bit_str.substring(bits_altitude, bits_lat).c_str()), 6);
         Serial.print(",");
-        Serial.print(bitStringToFloat(bit_str.substring(bits_lat, bits_lng).c_str()));
+        Serial.print(bitStringToFloat(bit_str.substring(bits_lat, bits_lng).c_str()), 6);
         Serial.print(",");
         Serial.print(bitStringToFloat(bit_str.substring(bits_lng, bits_pressure).c_str()));
         Serial.print(",");
