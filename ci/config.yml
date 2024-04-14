@@ -1,5 +1,5 @@
 board_manager:
-  additional_urls: []
+  additional_urls: [https://www.pjrc.com/teensy/package_teensy_index.json]
 build_cache:
   compilations_before_purge: 10
   ttl: 720h0m0s
