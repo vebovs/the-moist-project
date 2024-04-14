@@ -9,6 +9,9 @@ shopt -s globstar
 # Make sure we are inside the github workspace
 cd $GITHUB_WORKSPACE
 
+# Zip and copy custom libraries to dependencies
+./scripts/move_libraries_to_dependencies
+
 # Install Arduino IDE
 export PATH=$PATH:$GITHUB_WORKSPACE/bin
 curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
