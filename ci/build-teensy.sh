@@ -22,9 +22,6 @@ arduino-cli core update-index --additional-urls https://www.pjrc.com/teensy/pack
 # Install Teensy AVR core for Teensy 4.1
 arduino-cli core install teensy:avr
 
-# Link Arduino library
-ln -s $GITHUB_WORKSPACE $HOME/Arduino/libraries/moist
-
 # Install dependencies
 arduino-cli lib install float16@0.2.0
 arduino-cli lib install --zip-path ./dependencies/*.zip --config-file "./ci/config.yml"
