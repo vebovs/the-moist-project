@@ -9,10 +9,6 @@ shopt -s globstar
 # Make sure we are inside the github workspace
 cd $GITHUB_WORKSPACE
 
-# Create directories
-mkdir $HOME/Arduino
-mkdir $HOME/Arduino/libraries
-
 # Install Arduino IDE
 export PATH=$PATH:$GITHUB_WORKSPACE/bin
 curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
@@ -21,9 +17,6 @@ arduino-cli core update-index --additional-urls https://www.pjrc.com/teensy/pack
 
 # Install Teensy AVR core for Teensy 4.1
 arduino-cli core install teensy:avr
-
-# Link Arduino library
-ln -s $GITHUB_WORKSPACE $HOME/Arduino/libraries/moist
 
 # Install dependencies
 arduino-cli lib install float16@0.2.0
