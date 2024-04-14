@@ -25,6 +25,9 @@ arduino-cli core install teensy:avr
 # Link Arduino library
 ln -s $GITHUB_WORKSPACE $HOME/Arduino/libraries/moist
 
+# Install dependencies
+arduino-cli lib install float16@0.2.0
+
 # Compile ino files in the ground station subfolder
 for file in ./ground_station/**/*.ino ; do
 	arduino-cli compile -b teensy:avr:teensy41 $file
