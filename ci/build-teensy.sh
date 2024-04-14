@@ -11,7 +11,7 @@ cd $GITHUB_WORKSPACE
 
 # Create directories
 mkdir $HOME/Arduino
-mkdir $HOME/Ardunio/libraries
+mkdir $HOME/Arduino/libraries
 
 # Install Arduino IDE
 export PATH=$PATH:$GITHUB_WORKSPACE/bin
