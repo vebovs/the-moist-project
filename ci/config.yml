@@ -6,9 +6,9 @@ build_cache:
 daemon:
   port: '50051'
 directories:
-  data: $HOME/.arduino15
-  downloads: $HOME/.arduino15/staging
-  user: $HOME/Arduino
+  data: /home/runner/.arduino15
+  downloads: /home/runner/.arduino15/staging
+  user: /home/runner/Arduino
 library:
   enable_unsafe_install: true
 logging:
