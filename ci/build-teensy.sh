@@ -25,8 +25,6 @@ arduino-cli core install teensy:avr
 # Link Arduino library
 ln -s $GITHUB_WORKSPACE $HOME/Arduino/libraries/moist
 
-arduino-cli config dump
-
 # Install dependencies
 arduino-cli lib install float16@0.2.0
 arduino-cli lib install --zip-path ./dependencies/*.zip --config-file "./ci/config.yml"
