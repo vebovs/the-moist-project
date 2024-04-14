@@ -20,6 +20,8 @@ arduino-cli core install teensy:avr
 
 # Install dependencies
 arduino-cli lib install float16@0.2.0
+arduino-cli lib install Adafruit_SCD30@1.0.11
+arduino-cli lib install TinyGPSPlus@1.0.3
 arduino-cli lib install --zip-path ./dependencies/*.zip --config-file "./ci/config.yml"
 
 # Compile ino files in the ground station subfolder
