@@ -10,7 +10,7 @@ shopt -s globstar
 cd $GITHUB_WORKSPACE
 
 # Zip and copy custom libraries to dependencies
-./scripts/move_libraries_to_dependencies
+./scripts/move_libraries_to_dependencies.sh
 
 # Install Arduino IDE
 export PATH=$PATH:$GITHUB_WORKSPACE/bin
