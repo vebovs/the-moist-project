@@ -1,13 +1,14 @@
 name: build
+
 on: [pull_request, push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-  steps:
-    - name: Checkout Github Actions
-      uses: actions/checkout@main
+    steps:
+      - name: Checkout Github Actions
+        uses: actions/checkout@main
 
-    - name: Build on Arduino CLI
-      run: bash ci/build-teensy.sh
+      - name: Build on Arduino CLI
+        run: bash ci/build-teensy.sh
