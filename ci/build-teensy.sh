@@ -18,13 +18,11 @@ arduino-cli core update-index --additional-urls https://www.pjrc.com/teensy/pack
 # Install Teensy AVR core for Teensy 4.1
 arduino-cli core install teensy:avr
 
-set ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true
-
 # Install dependencies
 arduino-cli lib install float16@0.2.0
 arduino-cli lib install "Adafruit SCD30"@1.0.11
 arduino-cli lib install TinyGPSPlus@1.0.3
-arduino-cli lib install --zip-path ./dependencies/*.zip
+arduino-cli lib install --zip-path ./dependencies/*.zip --config-file "./ci/config.yml"
 
 # Compile ino files in the ground station subfolder
 for file in ./ground_station/**/*.ino ; do
