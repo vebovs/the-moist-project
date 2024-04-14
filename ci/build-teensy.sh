@@ -17,7 +17,7 @@ mkdir $HOME/Arduino/libraries
 export PATH=$PATH:$GITHUB_WORKSPACE/bin
 curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
 arduino-cli config init
-arduino-cli core update-index
+arduino-cli core update-index --additional-urls https://www.pjrc.com/teensy/package_teensy_index.json
 
 # Install Teensy AVR core for Teensy 4.1
 arduino-cli core install teensy:avr
