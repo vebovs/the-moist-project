@@ -8,7 +8,7 @@ jobs:
 
     steps:
       - name: Checkout Github Actions
-        uses: actions/checkout@main
+        uses: actions/checkout@v2
 
       - name: Build on Arduino CLI
         run: bash ci/build-teensy.sh
