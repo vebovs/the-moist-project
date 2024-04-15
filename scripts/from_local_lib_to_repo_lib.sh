@@ -1,11 +1,11 @@
 #!/bin/bash
 
 handle_all() {
-cp -r ~/Documents/Arduino/libraries/moist ./libraries/moist
+cp -r ~/Documents/Arduino/libraries/moist ./libraries
 }
 
 handle_specific() {
-cp -r ~/Documents/Arduino/libraries/$1 ./libraries/$1
+cp -r ~/Documents/Arduino/libraries/$1 ./libraries
 }
 
 while getopts "ad:" option; do
