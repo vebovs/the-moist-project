@@ -20,6 +20,7 @@ TinyGPSPlus gps;
 
 const uint16_t main_loop_delay = 2000; // ms
 uint16_t scd30_interval = 0;
+bool setup_error = false;
 uint8_t payload[RH_RF95_MAX_MESSAGE_LEN];
 
 int gps_thread_id = 0;
@@ -50,6 +51,7 @@ void setup() {
   gps_thread_state = threads.getState(gps_thread_id);
 
   if(!rf95.init()) {
+    setup_error = true;
     #if DEBUG
       Serial.println("Radio initialisation failed...");
     #endif
@@ -62,6 +64,7 @@ void setup() {
   rf95.setTxPower(OUTPUT_POWER, 0);
 
   if(!scd30.begin(SCD30_ADDRESS, &Wire1, 0)) {
+    setup_error = true;
     #if DEBUG
       Serial.println("Failed to find the SCD30...");
     #endif
@@ -79,10 +82,16 @@ void setup() {
   scd30_thread_state = threads.getState(scd30_thread_id);
 
   if(!gy91.init()) {
+    setup_error = true;
     #if DEBUG
       Serial.println("Could not initiate the GY91...");
     #endif
   }
+
+  #if !DEBUG
+    if(!setup_error) SetupSuccess();
+    if(setup_error) SetupFailure();
+  #endif
 }
 
 void loop() {
@@ -197,4 +206,32 @@ void gpsTask() {
       second = gps.time.second();
     }
   }
+}
+
+void SetupSuccess() {
+    tone(BUZZER_PIN, 523.25, 133);
+    delay(133);
+    tone(BUZZER_PIN, 523.25, 133);
+    delay(133);
+    tone(BUZZER_PIN, 523.25, 133);
+    delay(133);
+    tone(BUZZER_PIN, 523.25, 400);
+    delay(400);
+    tone(BUZZER_PIN, 415.30, 400);
+    delay(400);
+    tone(BUZZER_PIN, 466.16, 400);
+    delay(400);
+    tone(BUZZER_PIN, 523.25, 133);
+    delay(133);
+    delay(133);
+    tone(BUZZER_PIN, 466.16, 133);
+    delay(133);
+    tone(BUZZER_PIN, 523.25, 1200);
+    delay(1200);
+}
+
+void SetupFailure() {
+    tone(BUZZER_PIN, 1000);
+    delay(250);
+    noTone(BUZZER_PIN);
 }
