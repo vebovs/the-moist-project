@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <float16.h>
 
+#define BUZZER_PIN 29
+
 #define CS_PIN 24
 #define INT_PIN 25
 
