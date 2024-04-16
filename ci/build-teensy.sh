@@ -36,3 +36,8 @@ done
 for file in ./cansat/**/*.ino ; do
 	arduino-cli compile -b teensy:avr:teensy41 $file
 done
+
+# Compile ino files in the tests folders
+for file in ./tests/**/*.ino ; do
+	arduino-cli compile -b teensy:avr:teensy41 $file
+done
