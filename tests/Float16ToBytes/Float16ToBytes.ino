@@ -7,8 +7,8 @@ using namespace aunit;
 class Float16TestOnce: public TestOnce {
   protected:
     void assertEqualFloat16(float16 a, float16 b) {
-      if(a == b) assertEqual(true, true);
-      if(a != b) assertEqual(true, false);
+      if(a == b) assertTrue(true);
+      if(a != b) assertTrue(false);
     }
 };
 
