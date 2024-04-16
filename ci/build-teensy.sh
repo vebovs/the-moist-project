@@ -25,6 +25,7 @@ arduino-cli core install teensy:avr
 arduino-cli lib install float16@0.2.0
 arduino-cli lib install "Adafruit SCD30"@1.0.11
 arduino-cli lib install TinyGPSPlus@1.0.3
+arduino-cli lib install AUnit@1.7.1
 arduino-cli lib install --zip-path ./dependencies/*.zip --config-file "./ci/config.yml"
 
 # Compile ino files in the ground station subfolder
@@ -34,5 +35,10 @@ done
 
 # Compile ino files in the cansat subfolder
 for file in ./cansat/**/*.ino ; do
+	arduino-cli compile -b teensy:avr:teensy41 $file
+done
+
+# Compile ino files in the tests folders
+for file in ./tests/**/*.ino ; do
 	arduino-cli compile -b teensy:avr:teensy41 $file
 done

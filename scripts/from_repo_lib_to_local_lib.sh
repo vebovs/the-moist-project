@@ -17,7 +17,6 @@ while getopts "ad:" option; do
       handle_specific "$OPTARG"
       ;;
     *)
-      echo "Usage: $0 [-f file_name] [-d directory_name]"
       exit 1
       ;;
   esac
