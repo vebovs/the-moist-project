@@ -49,64 +49,32 @@ data_thread.start()
 graphs_frame = tk.Frame(app)
 graphs_frame.pack()
 
-fig_temp, ax_temp = plt.subplots()
-graph_temp = ax_temp.plot(0, 0, color = 'r')[0]
-ax_temp.set_title('SCD30')
-ax_temp.set_xlabel('Readings')
-ax_temp.set_ylabel('Temperature ($^\circ$C)') 
+def createFigure(title = '', xlabel = '', ylabel = '', color = 'g'):
+    fig, ax = plt.subplots()
+    graph = ax.plot(0, 0, color = color)[0]
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    canvas = FigureCanvasTkAgg(fig, graphs_frame)
+    canvas.draw()
+    canvas.get_tk_widget().pack(side = 'left', fill = 'both', expand = True)
+    return (fig, ax, graph)
 
-temp_canvas = FigureCanvasTkAgg(fig_temp, graphs_frame)
-temp_canvas.draw()
-temp_canvas.get_tk_widget().pack(side = 'left', fill = 'both', expand = True)
+fig_temp, ax_temp, graph_temp = createFigure('SCD30', 'Readings', 'Temperature ($^\circ$C)', 'r')
+fig_rh, ax_rh, graph_rh = createFigure('SCD30', 'Readings', 'Relative humidity (%)', 'g')
+fig_co2, ax_co2, graph_co2 = createFigure('SCD30', 'Readings', '$CO_{2}$ (ppm)', 'b')
 
-fig_rh, ax_rh = plt.subplots()
-graph_rh = ax_rh.plot(0, 0, color = 'g')[0]
-ax_rh.set_title('SCD30')
-ax_rh.set_xlabel('Readings')
-ax_rh.set_ylabel('Relative humidity (%)')
+def update(frame, ax, graph, INDEX):
+    if(data[INDEX]):
+        x = np.arange(start = 1, stop = len(data[INDEX]) + 1, step = 1)
+        ax.set_xlim(1, len(data[INDEX]))
+        ax.set_ylim(min(data[INDEX]) - 1, max(data[INDEX]) + 1)
+        graph.set_xdata(x)
+        graph.set_ydata(data[INDEX])
 
-temp_canvas = FigureCanvasTkAgg(fig_rh, graphs_frame)
-temp_canvas.draw()
-temp_canvas.get_tk_widget().pack(side = 'left', fill = 'both', expand = True)
-
-fig_co2, ax_co2 = plt.subplots()
-graph_co2 = ax_co2.plot(0, 0, color = 'b')[0]
-ax_co2.set_title('SCD30')
-ax_co2.set_xlabel('Readings')
-ax_co2.set_ylabel('$CO_{2}$ (ppm)')
-
-temp_canvas = FigureCanvasTkAgg(fig_co2, graphs_frame)
-temp_canvas.draw()
-temp_canvas.get_tk_widget().pack(side = 'left', fill = 'both', expand = True)
-
-def updateTemperature(frame):
-    if(data[TEMPERATURE]):
-        x = np.arange(start = 1, stop = len(data[TEMPERATURE]) + 1, step = 1)
-        ax_temp.set_xlim(1, len(data[TEMPERATURE]))
-        ax_temp.set_ylim(min(data[TEMPERATURE]) - 1, max(data[TEMPERATURE]) + 1)
-        graph_temp.set_xdata(x)
-        graph_temp.set_ydata(data[TEMPERATURE])
-
-def updateHumidity(frame):
-    if(data[HUMIDITY]):
-        x = np.arange(start = 1, stop = len(data[HUMIDITY]) + 1, step = 1)
-        ax_rh.set_xlim(1, len(data[HUMIDITY]))
-        ax_rh.set_ylim(min(data[HUMIDITY]) - 1, max(data[HUMIDITY]) + 1)
-        graph_rh.set_xdata(x)
-        graph_rh.set_ydata(data[HUMIDITY])
-
-def updateCO2(frame):
-    if(data[CO2]):
-        x = np.arange(start = 1, stop = len(data[CO2]) + 1, step = 1)
-        ax_co2.set_xlim(1, len(data[CO2]))
-        ax_co2.set_ylim(min(data[CO2]) - 1, max(data[CO2]) + 1)
-        graph_co2.set_xdata(x)
-        graph_co2.set_ydata(data[CO2])
-
-
-anim_temp = FuncAnimation(fig_temp, updateTemperature, frames = None)
-anim_hum = FuncAnimation(fig_rh, updateHumidity, frames = None)
-anim_co2 = FuncAnimation(fig_co2, updateCO2, frames = None)
+anim_temp = FuncAnimation(fig_temp, update, frames = None, fargs = (ax_temp, graph_temp, TEMPERATURE,))
+anim_hum = FuncAnimation(fig_rh, update, frames = None, fargs = (ax_rh, graph_rh, HUMIDITY,))
+anim_co2 = FuncAnimation(fig_co2, update, frames = None, fargs = (ax_co2, graph_co2, CO2,))
 
 def cleanup():
     plt.close('all')
