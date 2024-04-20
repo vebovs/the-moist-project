@@ -18,12 +18,19 @@ ser = serial.Serial(port, baudrate)
 
 event = threading.Event()
 
-VALUES = 0
-TEMPERATURE = 0
-HUMIDITY = 1
-CO2 = 2
+TIME = 0
+ID = 1
+TIMESTAMP = 2
+ALTITUDE = 3
+LAT = 4
+LNG = 5
+PRESSURE = 6
+NTC = 7
+HUMIDITY = 8
+CO2 = 9
+TEMPERATURE = 10
 
-data = [[], [], []]
+data = [[], [], [], [], [], [], [], [], [], [], []]
 
 def dataHandling():
     while (True):
@@ -35,9 +42,17 @@ def dataHandling():
                 writer_object.writerow(temp)
                 f_object.close()
 
-            data[0].append(int(temp[0]))
-            data[1].append(int(temp[1]))
-            data[2].append(int(temp[2]))
+            data[TIME].append(temp[TIME])
+            data[ID].append(int(temp[ID]))
+            data[TIMESTAMP].append(temp[TIMESTAMP])
+            data[ALTITUDE].append(float(temp[ALTITUDE]))
+            data[LAT].append(float(temp[LAT]))
+            data[LNG].append(float(temp[LNG]))
+            data[PRESSURE].append(float(temp[PRESSURE]))
+            data[NTC].append(float(temp[NTC]))
+            data[HUMIDITY].append(float(temp[HUMIDITY]))
+            data[CO2].append(float(temp[CO2]))
+            data[TEMPERATURE].append(float(temp[TEMPERATURE]))
 
             time.sleep(0.01)
         if(event.is_set()):
