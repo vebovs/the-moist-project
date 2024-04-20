@@ -7,7 +7,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import threading
-
+import tkintermapview
 
 app = tk.Tk()
 app.title('MOIST')
@@ -61,11 +61,23 @@ def dataHandling():
 data_thread = threading.Thread(target = dataHandling)
 data_thread.start()
 
+canvas_pool = []
+
+map_label = tk.Label(app)
+map_label.pack(pady = 20)
+
+map_widget = tkintermapview.TkinterMapView(map_label, width = 800, height = 600, corner_radius = 0)
+map_widget.set_position(69.295188, 16.029263) # Starting position
+marker = map_widget.set_marker(69.295188, 16.029263, 'Cansat')
+path = map_widget.set_path([(69.295188, 16.029263), (69.295189, 16.029264)])
+map_widget.set_zoom(10)
+map_widget.pack()
+
 top_graphs_frame = tk.Frame(app)
 top_graphs_frame.pack()
 
-middle_graphs_frame = tk.Frame(app)
-middle_graphs_frame.pack()
+bottom_graphs_frame = tk.Frame(app)
+bottom_graphs_frame.pack()
 
 def createFigure(title = '', xlabel = '', ylabel = '', color = 'g', parent_frame = None):
     fig, ax = plt.subplots()
@@ -76,15 +88,16 @@ def createFigure(title = '', xlabel = '', ylabel = '', color = 'g', parent_frame
     canvas = FigureCanvasTkAgg(fig, parent_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(side = 'left', fill = 'both', expand = True)
+    canvas_pool.append(canvas)
     return (fig, ax, graph)
 
 fig_temp, ax_temp, graph_temp = createFigure('SCD30', 'Readings', 'Temperature ($^\circ$C)', 'r', top_graphs_frame)
 fig_rh, ax_rh, graph_rh = createFigure('SCD30', 'Readings', 'Relative humidity (%)', 'g', top_graphs_frame)
 fig_co2, ax_co2, graph_co2 = createFigure('SCD30', 'Readings', '$CO_{2}$ (ppm)', 'b', top_graphs_frame)
 
-fig_ntc, ax_ntc, graph_ntc = createFigure('NTC', 'Readings', 'Resistance ($\Omega$)', 'c', middle_graphs_frame)
-fig_pressure, ax_pressure, graph_pressure = createFigure('BMP-280', 'Readings', 'Pressure (Pa)', 'y', middle_graphs_frame)
-fig_alt, ax_alt, graph_alt = createFigure('BN-880', 'Readings', 'Altitude (m)', 'm', middle_graphs_frame)
+fig_ntc, ax_ntc, graph_ntc = createFigure('NTC', 'Readings', 'Resistance ($\Omega$)', 'c', bottom_graphs_frame)
+fig_pressure, ax_pressure, graph_pressure = createFigure('BMP-280', 'Readings', 'Pressure (Pa)', 'y', bottom_graphs_frame)
+fig_alt, ax_alt, graph_alt = createFigure('BN-880', 'Readings', 'Altitude (m)', 'm', bottom_graphs_frame)
 
 def update(frame, ax, graph, INDEX):
     if(data[INDEX]):
@@ -104,6 +117,9 @@ anim_alt = FuncAnimation(fig_alt, update, frames = None, fargs=(ax_alt, graph_al
 
 def cleanup():
     plt.close('all')
+    for canvas in canvas_pool:
+        canvas.stop_event_loop()
+    map_widget.destroy()
     event.set()
     data_thread.join()
     app.destroy()
