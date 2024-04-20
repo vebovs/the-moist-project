@@ -9,6 +9,7 @@ from matplotlib.animation import FuncAnimation
 import numpy as np
 import threading
 import tkintermapview
+import os
 
 port = 'COM6'
 baudrate = 9600
@@ -29,49 +30,10 @@ CO2 = 9
 TEMPERATURE = 10
 
 data = [[], [], [], [], [], [], [], [], [], [], []]
-
-def dataHandling():
-    while (True):
-        if(ser.in_waiting):
-            temp = ser.read_until(b'\r').decode().strip().split(',')
-
-            with open('log.txt', 'a', newline='') as f_object:
-                writer_object = writer(f_object)
-                writer_object.writerow(temp)
-                f_object.close()
-
-            data[TIME].append(temp[TIME])
-            data[ID].append(int(temp[ID]))
-            data[TIMESTAMP].append(temp[TIMESTAMP])
-            data[ALTITUDE].append(float(temp[ALTITUDE]))
-            data[LAT].append(float(temp[LAT]))
-            data[LNG].append(float(temp[LNG]))
-            data[PRESSURE].append(float(temp[PRESSURE]))
-            data[NTC].append(float(temp[NTC]))
-            data[HUMIDITY].append(float(temp[HUMIDITY]))
-            data[CO2].append(float(temp[CO2]))
-            data[TEMPERATURE].append(float(temp[TEMPERATURE]))
-
-            time.sleep(0.01)
-        if(event.is_set()):
-            break
-
-data_thread = threading.Thread(target = dataHandling)
-data_thread.start()
-
-canvas_pool = []
-
+file = ''
+recording = False
 app = tk.Tk()
 app.title('MOIST')
-
-
-"""
-graphs_page = tk.Frame(app)
-map_page = tk.Frame(app)
-
-graphs_page.grid(row = 0, column = 0)
-map_page.grid(row = 0, column = 0)
-"""
 
 container_frame = tk.Frame(app)
 container_frame.pack(fill = 'both', expand = True)
@@ -94,6 +56,62 @@ top_graphs_frame.pack()
 
 bottom_graphs_frame = tk.Frame(graphs_container)
 bottom_graphs_frame.pack()
+
+menu_frame = tk.Frame(app)
+menu_frame.pack(side = 'bottom', fill = 'both', expand = True)
+
+time_elapsed_label = tk.Label(menu_frame, text = 'Elapsed time: -')
+time_elapsed_label.pack(side = 'left')
+
+def save():
+    global file
+    files = [('Text file', '*.txt')]
+    file = asksaveasfile(filetypes = files, defaultextension = files).name
+
+save_btn = tk.Button(menu_frame, text = 'Save', command = lambda: save())
+save_btn.pack(side = 'left')
+
+def updateRecording(state):
+    global recording
+    recording = state
+
+start_recording_btn = tk.Button(menu_frame, text = 'Start Recording', command = lambda: updateRecording(True))
+start_recording_btn.pack(side = 'left')
+
+stop_recording_btn = tk.Button(menu_frame, text = 'Stop Recording', command = lambda: updateRecording(False))
+stop_recording_btn.pack(side = 'left')
+
+def dataHandling():
+    while (True):
+        if(ser.in_waiting):
+            temp = ser.read_until(b'\r').decode().strip().split(',')
+
+            if(os.path.isfile(file) and recording):    
+                with open(file, 'a', newline='') as f_object:
+                    writer_object = writer(f_object)
+                    writer_object.writerow(temp)
+                    f_object.close()
+
+            data[TIME].append(temp[TIME])
+            data[ID].append(int(temp[ID]))
+            data[TIMESTAMP].append(temp[TIMESTAMP])
+            data[ALTITUDE].append(float(temp[ALTITUDE]))
+            data[LAT].append(float(temp[LAT]))
+            data[LNG].append(float(temp[LNG]))
+            data[PRESSURE].append(float(temp[PRESSURE]))
+            data[NTC].append(float(temp[NTC]))
+            data[HUMIDITY].append(float(temp[HUMIDITY]))
+            data[CO2].append(float(temp[CO2]))
+            data[TEMPERATURE].append(float(temp[TEMPERATURE]))
+
+            time.sleep(0.01)
+        if(event.is_set()):
+            break
+
+data_thread = threading.Thread(target = dataHandling)
+data_thread.start()
+
+canvas_pool = []
 
 def createFigure(title = '', xlabel = '', ylabel = '', color = 'g', parent_frame = None):
     fig, ax = plt.subplots()
@@ -124,13 +142,13 @@ def update(frame, ax, graph, INDEX):
         graph.set_xdata(x)
         graph.set_ydata(data[INDEX])
 
-anim_temp = FuncAnimation(fig_temp, update, frames = None, fargs = (ax_temp, graph_temp, TEMPERATURE,))
-anim_hum = FuncAnimation(fig_rh, update, frames = None, fargs = (ax_rh, graph_rh, HUMIDITY,))
-anim_co2 = FuncAnimation(fig_co2, update, frames = None, fargs = (ax_co2, graph_co2, CO2,))
+anim_temp = FuncAnimation(fig_temp, update, cache_frame_data = False, fargs = (ax_temp, graph_temp, TEMPERATURE,))
+anim_hum = FuncAnimation(fig_rh, update, cache_frame_data = False, fargs = (ax_rh, graph_rh, HUMIDITY,))
+anim_co2 = FuncAnimation(fig_co2, update, cache_frame_data = False, fargs = (ax_co2, graph_co2, CO2,))
 
-anim_ntc = FuncAnimation(fig_ntc, update, frames = None, fargs=(ax_ntc, graph_ntc, NTC,))
-anim_pressure = FuncAnimation(fig_pressure, update, frames = None, fargs=(ax_pressure, graph_pressure, PRESSURE,))
-anim_alt = FuncAnimation(fig_alt, update, frames = None, fargs=(ax_alt, graph_alt, ALTITUDE,))
+anim_ntc = FuncAnimation(fig_ntc, update, cache_frame_data = False, fargs=(ax_ntc, graph_ntc, NTC,))
+anim_pressure = FuncAnimation(fig_pressure, update, cache_frame_data = False, fargs=(ax_pressure, graph_pressure, PRESSURE,))
+anim_alt = FuncAnimation(fig_alt, update, cache_frame_data = False, fargs=(ax_alt, graph_alt, ALTITUDE,))
 
 def cleanup():
     plt.close('all')
@@ -141,13 +159,11 @@ def cleanup():
     data_thread.join()
     app.destroy()
 
-"""
-graphs_btn = tk.Button(graphs_page, text = 'Map', command = lambda: map_page.tkraise())
-graphs_btn.pack()
-map_btn = tk.Button(map_page, text = 'Graphs', command = lambda: graphs_page.tkraise())
-map_btn.pack()
+def updateElapsedTime():
+    if(data[TIME]):
+        time_elapsed_label.configure(text = 'Elapsed time: ' + data[TIME][-1])
+    time_elapsed_label.after(1000, func = updateElapsedTime)
+updateElapsedTime()
 
-graphs_page.tkraise()
-"""
 app.protocol('WM_DELETE_WINDOW', cleanup)
 app.mainloop()
