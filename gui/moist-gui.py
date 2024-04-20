@@ -17,21 +17,18 @@ ser = serial.Serial(port, baudrate)
 
 event = threading.Event()
 
-TIME = 0
-ID = 1
-TIMESTAMP = 2
-ALTITUDE = 3
-LAT = 4
-LNG = 5
-PRESSURE = 6
-NTC = 7
-HUMIDITY = 8
-CO2 = 9
-TEMPERATURE = 10
+ALTITUDE = 0
+PRESSURE = 1
+NTC = 2
+HUMIDITY = 3
+CO2 = 4
+TEMPERATURE = 5
 
-data = [[], [], [], [], [], [], [], [], [], [], []]
+data = [[], [], [], [], [], []]
 file = ''
 recording = False
+elapsed_time = 'Elapsed time: -'
+
 app = tk.Tk()
 app.title('MOIST')
 
@@ -41,10 +38,11 @@ container_frame.pack(fill = 'both', expand = True)
 map_label = tk.Label(container_frame)
 map_label.pack(side = 'right')
 
+line = [(69.295188, 16.029263), (69.295189, 16.029264)]
 map_widget = tkintermapview.TkinterMapView(map_label, width = 600, height = 800, corner_radius = 0)
 map_widget.set_position(69.295188, 16.029263) # Starting position
 marker = map_widget.set_marker(69.295188, 16.029263, 'Cansat')
-path = map_widget.set_path([(69.295188, 16.029263), (69.295189, 16.029264)])
+path = map_widget.set_path(line)
 map_widget.set_zoom(10)
 map_widget.pack()
 
@@ -60,7 +58,7 @@ bottom_graphs_frame.pack()
 menu_frame = tk.Frame(app)
 menu_frame.pack(side = 'bottom', fill = 'both', expand = True)
 
-time_elapsed_label = tk.Label(menu_frame, text = 'Elapsed time: -')
+time_elapsed_label = tk.Label(menu_frame, text = elapsed_time)
 time_elapsed_label.pack(side = 'left')
 
 def save():
@@ -83,30 +81,37 @@ stop_recording_btn.pack(side = 'left')
 
 def dataHandling():
     while (True):
-        if(ser.in_waiting):
-            temp = ser.read_until(b'\r').decode().strip().split(',')
+        try:
+            if(not ser.is_open): ser.open()
+            if(ser.in_waiting):
+                temp = ser.read_until(b'\r').decode().strip().split(',')
+                
+                if(len(temp) > 1):
+                    if(os.path.isfile(file) and recording):    
+                        with open(file, 'a', newline='') as f_object:
+                            writer_object = writer(f_object)
+                            writer_object.writerow(temp)
+                            f_object.close()
+                    
+                    global elapsed_time
+                    elapsed_time = temp[0]
 
-            if(os.path.isfile(file) and recording):    
-                with open(file, 'a', newline='') as f_object:
-                    writer_object = writer(f_object)
-                    writer_object.writerow(temp)
-                    f_object.close()
+                    if(float(temp[4]) != 0 and float(temp[5]) != 0):
+                        line.append((float(temp[4]), float(temp[5])))
 
-            data[TIME].append(temp[TIME])
-            data[ID].append(int(temp[ID]))
-            data[TIMESTAMP].append(temp[TIMESTAMP])
-            data[ALTITUDE].append(float(temp[ALTITUDE]))
-            data[LAT].append(float(temp[LAT]))
-            data[LNG].append(float(temp[LNG]))
-            data[PRESSURE].append(float(temp[PRESSURE]))
-            data[NTC].append(float(temp[NTC]))
-            data[HUMIDITY].append(float(temp[HUMIDITY]))
-            data[CO2].append(float(temp[CO2]))
-            data[TEMPERATURE].append(float(temp[TEMPERATURE]))
+                    data[ALTITUDE].append(float(temp[3]))
+                    data[PRESSURE].append(float(temp[6]))
+                    data[NTC].append(float(temp[7]))
+                    data[HUMIDITY].append(float(temp[8]))
+                    data[CO2].append(float(temp[9]))
+                    data[TEMPERATURE].append(float(temp[10]))
+        except serial.SerialException as se:
+            ser.close()
 
-            time.sleep(0.01)
         if(event.is_set()):
             break
+
+        time.sleep(0.01)
 
 data_thread = threading.Thread(target = dataHandling)
 data_thread.start()
@@ -160,10 +165,16 @@ def cleanup():
     app.destroy()
 
 def updateElapsedTime():
-    if(data[TIME]):
-        time_elapsed_label.configure(text = 'Elapsed time: ' + data[TIME][-1])
+    time_elapsed_label.configure(text = 'Elapsed time: ' + elapsed_time)
     time_elapsed_label.after(1000, func = updateElapsedTime)
 updateElapsedTime()
+
+def updateMap():
+    lat, lng = line[-1]
+    marker.set_position(lat, lng)
+    path.set_position_list(line)
+    map_widget.after(1000, func = updateMap)
+updateMap()
 
 app.protocol('WM_DELETE_WINDOW', cleanup)
 app.mainloop()
