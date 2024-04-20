@@ -10,6 +10,8 @@ import numpy as np
 import threading
 import tkintermapview
 import os
+from PIL import Image, ImageTk
+from tkinter import PhotoImage
 
 port = 'COM6'
 baudrate = 9600
@@ -55,37 +57,45 @@ top_graphs_frame.pack()
 bottom_graphs_frame = tk.Frame(graphs_container)
 bottom_graphs_frame.pack()
 
-menu_frame = tk.Frame(app)
+menu_frame = tk.Frame(app, background = 'white')
 menu_frame.pack(side = 'bottom', fill = 'both', expand = True)
 
-time_elapsed_label = tk.Label(menu_frame, text = elapsed_time)
-time_elapsed_label.pack(side = 'left')
+time_elapsed_label = tk.Label(menu_frame, text = elapsed_time, background = 'white', font = ('Arial', 15))
+time_elapsed_label.pack(side = 'right')
 
 def save():
     global file
     files = [('Text file', '*.txt')]
     file = asksaveasfile(filetypes = files, defaultextension = files).name
 
-save_btn = tk.Button(menu_frame, text = 'Save', command = lambda: save())
+save_icon = PhotoImage(file = './assets/icons8-save-30.png')
+save_btn = tk.Button(menu_frame, command = lambda: save(), image = save_icon, width = 30, height = 30, background = 'white')
 save_btn.pack(side = 'left')
 
-def updateRecording(state):
+start_recording_icon = PhotoImage(file = './assets/icons8-start-30.png')
+stop_recording_icon = PhotoImage(file = './assets/icons8-pause-squared-30.png')
+
+def updateRecording():
     global recording
-    recording = state
+    recording = not recording
+    if(recording):
+        recording_btn.configure(image = stop_recording_icon)
+    else:
+        recording_btn.configure(image = start_recording_icon)
 
-start_recording_btn = tk.Button(menu_frame, text = 'Start Recording', command = lambda: updateRecording(True))
-start_recording_btn.pack(side = 'left')
+recording_btn = tk.Button(menu_frame, command = lambda: updateRecording(), image = start_recording_icon, background = 'white')
+recording_btn.pack(side = 'left')
 
-stop_recording_btn = tk.Button(menu_frame, text = 'Stop Recording', command = lambda: updateRecording(False))
-stop_recording_btn.pack(side = 'left')
+recording_icon = PhotoImage(file = './assets/icons8-recording-30.png')
+recording_label = tk.Label(menu_frame, image = recording_icon, background = 'white')
+recording_label.pack(side = 'left')
 
 def dataHandling():
     while (True):
         try:
-            if(not ser.is_open): ser.open()
+            if(not ser.is_open): ser.open() # handle reconnect
             if(ser.in_waiting):
                 temp = ser.read_until(b'\r').decode().strip().split(',')
-                
                 if(len(temp) > 1):
                     if(os.path.isfile(file) and recording):    
                         with open(file, 'a', newline='') as f_object:
@@ -106,7 +116,7 @@ def dataHandling():
                     data[CO2].append(float(temp[9]))
                     data[TEMPERATURE].append(float(temp[10]))
         except serial.SerialException as se:
-            ser.close()
+            ser.close() # handle disconnect
 
         if(event.is_set()):
             break
@@ -175,6 +185,17 @@ def updateMap():
     path.set_position_list(line)
     map_widget.after(1000, func = updateMap)
 updateMap()
+
+def flashRecording(state):
+    if(recording):
+        if(state):
+            recording_label.configure(image = '')
+        else:
+            recording_label.configure(image = recording_icon)
+    else:
+        recording_label.configure(image = '')
+    recording_label.after(1000, flashRecording, not state)
+flashRecording(recording)
 
 app.protocol('WM_DELETE_WINDOW', cleanup)
 app.mainloop()
