@@ -1,1 +1,2 @@
 gui/*.txt
+!gui/requirements.txt
