@@ -2,15 +2,13 @@ import serial
 import time
 from csv import writer
 import tkinter as tk
+from tkinter.filedialog import asksaveasfile
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import threading
 import tkintermapview
-
-app = tk.Tk()
-app.title('MOIST')
 
 port = 'COM6'
 baudrate = 9600
@@ -63,24 +61,43 @@ data_thread.start()
 
 canvas_pool = []
 
-map_label = tk.Label(app)
-map_label.pack(pady = 20)
+app = tk.Tk()
+app.title('MOIST')
 
-map_widget = tkintermapview.TkinterMapView(map_label, width = 800, height = 600, corner_radius = 0)
+
+"""
+graphs_page = tk.Frame(app)
+map_page = tk.Frame(app)
+
+graphs_page.grid(row = 0, column = 0)
+map_page.grid(row = 0, column = 0)
+"""
+
+container_frame = tk.Frame(app)
+container_frame.pack(fill = 'both', expand = True)
+
+map_label = tk.Label(container_frame)
+map_label.pack(side = 'right')
+
+map_widget = tkintermapview.TkinterMapView(map_label, width = 600, height = 800, corner_radius = 0)
 map_widget.set_position(69.295188, 16.029263) # Starting position
 marker = map_widget.set_marker(69.295188, 16.029263, 'Cansat')
 path = map_widget.set_path([(69.295188, 16.029263), (69.295189, 16.029264)])
 map_widget.set_zoom(10)
 map_widget.pack()
 
-top_graphs_frame = tk.Frame(app)
+graphs_container = tk.Frame(container_frame)
+graphs_container.pack(side = 'left')
+
+top_graphs_frame = tk.Frame(graphs_container)
 top_graphs_frame.pack()
 
-bottom_graphs_frame = tk.Frame(app)
+bottom_graphs_frame = tk.Frame(graphs_container)
 bottom_graphs_frame.pack()
 
 def createFigure(title = '', xlabel = '', ylabel = '', color = 'g', parent_frame = None):
     fig, ax = plt.subplots()
+    fig.set_size_inches(6.4, 4)
     graph = ax.plot(0, 0, color = color)[0]
     ax.set_title(title)
     ax.set_xlabel(xlabel)
@@ -102,7 +119,7 @@ fig_alt, ax_alt, graph_alt = createFigure('BN-880', 'Readings', 'Altitude (m)', 
 def update(frame, ax, graph, INDEX):
     if(data[INDEX]):
         x = np.arange(start = 1, stop = len(data[INDEX]) + 1, step = 1)
-        ax.set_xlim(1, len(data[INDEX]))
+        ax.set_xlim(1, len(data[INDEX]) + 1)
         ax.set_ylim(min(data[INDEX]) - 1, max(data[INDEX]) + 1)
         graph.set_xdata(x)
         graph.set_ydata(data[INDEX])
@@ -124,6 +141,13 @@ def cleanup():
     data_thread.join()
     app.destroy()
 
-app.protocol('WM_DELETE_WINDOW', cleanup)
+"""
+graphs_btn = tk.Button(graphs_page, text = 'Map', command = lambda: map_page.tkraise())
+graphs_btn.pack()
+map_btn = tk.Button(map_page, text = 'Graphs', command = lambda: graphs_page.tkraise())
+map_btn.pack()
 
+graphs_page.tkraise()
+"""
+app.protocol('WM_DELETE_WINDOW', cleanup)
 app.mainloop()
