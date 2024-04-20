@@ -37,7 +37,7 @@ def dataHandling():
         if(ser.in_waiting):
             temp = ser.read_until(b'\r').decode().strip().split(',')
 
-            with open('stuff.txt', 'a', newline='') as f_object:
+            with open('log.txt', 'a', newline='') as f_object:
                 writer_object = writer(f_object)
                 writer_object.writerow(temp)
                 f_object.close()
@@ -61,23 +61,30 @@ def dataHandling():
 data_thread = threading.Thread(target = dataHandling)
 data_thread.start()
 
-graphs_frame = tk.Frame(app)
-graphs_frame.pack()
+top_graphs_frame = tk.Frame(app)
+top_graphs_frame.pack()
 
-def createFigure(title = '', xlabel = '', ylabel = '', color = 'g'):
+middle_graphs_frame = tk.Frame(app)
+middle_graphs_frame.pack()
+
+def createFigure(title = '', xlabel = '', ylabel = '', color = 'g', parent_frame = None):
     fig, ax = plt.subplots()
     graph = ax.plot(0, 0, color = color)[0]
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    canvas = FigureCanvasTkAgg(fig, graphs_frame)
+    canvas = FigureCanvasTkAgg(fig, parent_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(side = 'left', fill = 'both', expand = True)
     return (fig, ax, graph)
 
-fig_temp, ax_temp, graph_temp = createFigure('SCD30', 'Readings', 'Temperature ($^\circ$C)', 'r')
-fig_rh, ax_rh, graph_rh = createFigure('SCD30', 'Readings', 'Relative humidity (%)', 'g')
-fig_co2, ax_co2, graph_co2 = createFigure('SCD30', 'Readings', '$CO_{2}$ (ppm)', 'b')
+fig_temp, ax_temp, graph_temp = createFigure('SCD30', 'Readings', 'Temperature ($^\circ$C)', 'r', top_graphs_frame)
+fig_rh, ax_rh, graph_rh = createFigure('SCD30', 'Readings', 'Relative humidity (%)', 'g', top_graphs_frame)
+fig_co2, ax_co2, graph_co2 = createFigure('SCD30', 'Readings', '$CO_{2}$ (ppm)', 'b', top_graphs_frame)
+
+fig_ntc, ax_ntc, graph_ntc = createFigure('NTC', 'Readings', 'Resistance ($\Omega$)', 'c', middle_graphs_frame)
+fig_pressure, ax_pressure, graph_pressure = createFigure('BMP-280', 'Readings', 'Pressure (Pa)', 'y', middle_graphs_frame)
+fig_alt, ax_alt, graph_alt = createFigure('BN-880', 'Readings', 'Altitude (m)', 'm', middle_graphs_frame)
 
 def update(frame, ax, graph, INDEX):
     if(data[INDEX]):
@@ -90,6 +97,10 @@ def update(frame, ax, graph, INDEX):
 anim_temp = FuncAnimation(fig_temp, update, frames = None, fargs = (ax_temp, graph_temp, TEMPERATURE,))
 anim_hum = FuncAnimation(fig_rh, update, frames = None, fargs = (ax_rh, graph_rh, HUMIDITY,))
 anim_co2 = FuncAnimation(fig_co2, update, frames = None, fargs = (ax_co2, graph_co2, CO2,))
+
+anim_ntc = FuncAnimation(fig_ntc, update, frames = None, fargs=(ax_ntc, graph_ntc, NTC,))
+anim_pressure = FuncAnimation(fig_pressure, update, frames = None, fargs=(ax_pressure, graph_pressure, PRESSURE,))
+anim_alt = FuncAnimation(fig_alt, update, frames = None, fargs=(ax_alt, graph_alt, ALTITUDE,))
 
 def cleanup():
     plt.close('all')
