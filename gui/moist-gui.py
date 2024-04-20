@@ -1,17 +1,16 @@
 import serial
 import time
 from csv import writer
-import tkinter as tk
-from tkinter.filedialog import asksaveasfile
+import numpy as np
+import threading
+import os
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.animation import FuncAnimation
-import numpy as np
-import threading
-import tkintermapview
-import os
-from PIL import Image, ImageTk
+import tkinter as tk
+from tkinter.filedialog import asksaveasfile
 from tkinter import PhotoImage
+import tkintermapview
 
 port = 'COM6'
 baudrate = 9600
