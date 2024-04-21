@@ -9,10 +9,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.animation import FuncAnimation
 import tkinter as tk
 from tkinter.filedialog import asksaveasfile
-from tkinter import PhotoImage
 import tkintermapview
+from PIL import Image, ImageTk
 
-port = 'COM6'
+port = 'COM4'
 baudrate = 9600
 ser = serial.Serial(port, baudrate)
 
@@ -67,12 +67,15 @@ def save():
     files = [('Text file', '*.txt')]
     file = asksaveasfile(filetypes = files, defaultextension = files).name
 
-save_icon = PhotoImage(file = './assets/icons8-save-30.png')
+save_image = Image.open('./assets/icons8-save-30.png')
+save_icon = ImageTk.PhotoImage(image = save_image)
 save_btn = tk.Button(menu_frame, command = lambda: save(), image = save_icon, width = 30, height = 30, background = 'white')
 save_btn.pack(side = 'left')
 
-start_recording_icon = PhotoImage(file = './assets/icons8-start-30.png')
-stop_recording_icon = PhotoImage(file = './assets/icons8-pause-squared-30.png')
+start_recording_image = Image.open('./assets/icons8-start-30.png')
+start_recording_icon = ImageTk.PhotoImage(image = start_recording_image)
+stop_recording_image = Image.open('./assets/icons8-pause-squared-30.png')
+stop_recording_icon = ImageTk.PhotoImage(image = stop_recording_image)
 
 def updateRecording():
     global recording
@@ -85,7 +88,8 @@ def updateRecording():
 recording_btn = tk.Button(menu_frame, command = lambda: updateRecording(), image = start_recording_icon, background = 'white')
 recording_btn.pack(side = 'left')
 
-recording_icon = PhotoImage(file = './assets/icons8-recording-30.png')
+recording_image = Image.open('./assets/icons8-recording-30.png')
+recording_icon = ImageTk.PhotoImage(image = recording_image)
 recording_label = tk.Label(menu_frame, image = recording_icon, background = 'white')
 recording_label.pack(side = 'left')
 
