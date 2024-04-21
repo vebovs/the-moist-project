@@ -133,11 +133,10 @@ canvas_pool = []
 
 def createFigure(title = '', xlabel = '', ylabel = '', color = 'g', parent_frame = None):
     fig, ax = plt.subplots()
-    fig.set_size_inches(6.4, 4)
+    fig.set_size_inches(4.4, 4)
     graph = ax.plot(0, 0, color = color)[0]
-    ax.set_title(title)
+    ax.set_title(title + ' ' + ylabel)
     ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
     canvas = FigureCanvasTkAgg(fig, parent_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(side = 'left', fill = 'both', expand = True)
