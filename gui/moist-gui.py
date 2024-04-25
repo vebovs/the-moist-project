@@ -35,7 +35,6 @@ elapsed_time = 'Elapsed time: -'
 tilt_gps = 'GPS based tilt: -'
 tilt_pressure = 'Pressure based tilt: -'
 rssi = 'RSSI: -'
-packet_wait_time = 0
 ntc_temp = 0.0
 
 starting_pos = (69.296011, 16.028944) # Starting position of Cansat
@@ -92,9 +91,6 @@ rssi_label.pack()
 
 ntc_temp_label = tk.Label(menu_frame, text = 'NTC Temperature: -', background = 'white', font = ('Arial', 15))
 ntc_temp_label.pack()
-
-packet_wait_time_label = tk.Label(menu_frame, text = 'Packet wait time: - ', background = 'white', font = ('Arial', 15))
-packet_wait_time_label.pack()
 
 def save():
     global file
@@ -165,18 +161,12 @@ def calcTilt(alt, lat, lng):
      current_distance = distance(lat, lng)
      return math.degrees(math.atan2(alt, current_distance))
 
-def current_time_seconds():
-    return round(time.time())
-
 def dataHandling():
     while (True):
-        waiting_for_packet = True
-        start_time = current_time_seconds()
         try:
             if(not ser.is_open): ser.open() # handle reconnect
             if(ser.in_waiting):
                 temp = ser.read_until(b'\r').decode().strip().split(',')
-                waiting_for_packet = False
                 if(len(temp) > 1):
                     if(os.path.isfile(file) and recording):    
                         with open(file, 'a', newline='') as f_object:
@@ -206,12 +196,6 @@ def dataHandling():
                     data[HUMIDITY].append(float(temp[8]))
                     data[CO2].append(float(temp[9]))
                     data[TEMPERATURE].append(float(temp[10]))
-            else:
-                print('test')
-                if(waiting_for_packet):
-                    global packet_wait_time
-                    packet_wait_time = (current_time_seconds() - start_time)
-                continue
         except serial.SerialException as se:
             ser.close() # handle disconnect
 
@@ -272,7 +256,6 @@ def updateLabels():
     time_elapsed_label.configure(text = 'Elapsed time: ' + elapsed_time)
     rssi_label.configure(text = 'RSSI: ' + rssi + ' dbm')
     ntc_temp_label.configure(text = 'NTC Temperature: ' + str(ntc_temp) + u'\N{DEGREE SIGN}' + 'C')
-    packet_wait_time_label.configure(text = 'Packet wait time: ' + str(packet_wait_time) + 's')
     tilt_gps_label.configure(text = 'GPS based tilt: ' + str(tilt_gps) + u'\N{DEGREE SIGN}')
     tilt_pressure_label.configure(text = 'Pressure based tilt: ' + str(tilt_pressure) + u'\N{DEGREE SIGN}')
     time_elapsed_label.after(1000, func = updateLabels)
