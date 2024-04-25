@@ -36,6 +36,7 @@ tilt_gps = 'GPS based tilt: -'
 tilt_pressure = 'Pressure based tilt: -'
 rssi = 'RSSI: -'
 ntc_temp = 0.0
+bearing = 0
 
 starting_pos = (69.296011, 16.028944) # Starting position of Cansat
 operator_pos = (69.296049, 16.030619) # Starting position of operator
@@ -91,6 +92,9 @@ rssi_label.pack()
 
 ntc_temp_label = tk.Label(menu_frame, text = 'NTC Temperature: -', background = 'white', font = ('Arial', 15))
 ntc_temp_label.pack()
+
+bearing_label = tk.Label(menu_frame, text = 'Bearing: -', background = 'white', font = ('Arial', 15))
+bearing_label.pack()
 
 def save():
     global file
@@ -161,6 +165,26 @@ def calcTilt(alt, lat, lng):
      current_distance = distance(lat, lng)
      return math.degrees(math.atan2(alt, current_distance))
 
+def calcBearing(current_lat, current_lng):
+    op_lat, op_lng = operator_pos
+    # degrees to radians
+    op_lat = math.radians(op_lat)
+    op_lng = math.radians(op_lng)
+    current_lat = math.radians(current_lat)
+    current_lng = math.radians(current_lng)
+
+    diff_lon = current_lng - op_lng
+
+    # Calculate the angle
+    x = math.sin(diff_lon) * math.cos(current_lat)
+    y = math.cos(op_lat) * math.sin(current_lat) - (
+        math.sin(op_lat) * math.cos(current_lat) * math.cos(diff_lon)
+    )
+
+    bearing = math.atan2(x, y)
+    return math.degrees(bearing)
+
+
 def dataHandling():
     while (True):
         try:
@@ -174,7 +198,7 @@ def dataHandling():
                             writer_object.writerow(temp)
                             f_object.close()
                     
-                    global elapsed_time, rssi, tilt_gps, tilt_pressure, op_can_path, ntc_temp
+                    global elapsed_time, rssi, tilt_gps, tilt_pressure, op_can_path, ntc_temp, bearing
                     elapsed_time = temp[0]
                     rssi = temp[11]
 
@@ -182,6 +206,8 @@ def dataHandling():
                     
                     lat = float(temp[4])
                     lng = float(temp[5])
+
+                    bearing = calcBearing(lat, lng)
 
                     op_can_line[-1] = (lat, lng)
 
@@ -258,12 +284,14 @@ def updateLabels():
     ntc_temp_label.configure(text = 'NTC Temperature: ' + str(ntc_temp) + u'\N{DEGREE SIGN}' + 'C')
     tilt_gps_label.configure(text = 'GPS based tilt: ' + str(tilt_gps) + u'\N{DEGREE SIGN}')
     tilt_pressure_label.configure(text = 'Pressure based tilt: ' + str(tilt_pressure) + u'\N{DEGREE SIGN}')
+    bearing_label.configure(text = 'Bearing: ' + str(bearing) + u'\N{DEGREE SIGN}')
     time_elapsed_label.after(1000, func = updateLabels)
 updateLabels()
 
 def updateMap():
     lat, lng = line[-1]
     marker.set_position(lat, lng)
+    marker.set_text('Cansat\nlat: ' + str(lat) + '\nlng: ' + str(lng))
     path.set_position_list(line)
     op_can_path.set_position_list(op_can_line)
     map_widget.after(1000, func = updateMap)
