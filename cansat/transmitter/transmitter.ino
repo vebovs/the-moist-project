@@ -61,7 +61,7 @@ void setup() {
   rf95.setSignalBandwidth(BANDWIDTH);
   rf95.setSpreadingFactor(SPREADING_FACTOR);
   rf95.setCodingRate4(CRC_DENOMINATOR);
-  rf95.setTxPower(OUTPUT_POWER, 0);
+  rf95.setTxPower(3, 0);
 
   if(!scd30.begin(SCD30_ADDRESS, &Wire1, 0)) {
     setup_error = true;

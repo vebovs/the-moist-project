@@ -116,7 +116,9 @@ void loop() {
         Serial.print(",");
         Serial.print(bitStringToFloat(bit_str.substring(bits_rh, bits_co2).c_str()));
         Serial.print(",");
-        Serial.println(bitStringToFloat16(bit_str.substring(bits_co2, bits_temp).c_str()));
+        Serial.print(bitStringToFloat16(bit_str.substring(bits_co2, bits_temp).c_str()));
+        Serial.print(",");
+        Serial.println(rf95.lastRssi(), DEC);
       #endif
       
     }
