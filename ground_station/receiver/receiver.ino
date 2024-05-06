@@ -5,7 +5,7 @@
 #include <moist.h>
 
 // Set to 0 while capturing data
-#define DEBUG 0
+#define DEBUG 1
 
 RH_RF95 rf95(CS_PIN, INT_PIN);
 

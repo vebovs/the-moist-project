@@ -13,7 +13,7 @@
 #define BANDWIDTH 62500
 #define SPREADING_FACTOR 7
 #define CRC_DENOMINATOR 5
-#define OUTPUT_POWER 10
+#define OUTPUT_POWER 13
 
 // RxPin = 0, TxPin = 1 on Teensy
 #define GPS_RX_PIN 0
